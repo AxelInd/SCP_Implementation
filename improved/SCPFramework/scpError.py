@@ -31,3 +31,5 @@ class unitTestFailedError(Error):
    pass  
 class invalidEpistemicStateError(Error):
     pass
+class invalidCTMError(Error):
+    pass
