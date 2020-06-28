@@ -2,8 +2,6 @@
 """
 Created on Sat Jan 18 09:41:08 2020
 
-This file includes several examples of implementations of the Suppression Task as described in the thesis
-All examples make use of the SCP framework.
 @author: Axel
 """
 

@@ -74,7 +74,9 @@ class SCP_Task (object):
         firstCTM.si = self.si
         
         ctms = firstCTM
-        results = self.dns(ctms, depth)
+        results=[]
+        for i in range (0, depth+1):
+            results += self.dns(ctms, i)
         results = searchTypes[searchType](results)
         
         return results

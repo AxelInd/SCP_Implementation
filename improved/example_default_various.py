@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jun 22 09:45:08 2020
-
-This file includes several examples of implementations of Reiter's Default as described in the thesis
-All examples make use of the SCP framework.
-
-The <m_default> cognitive function adds shows the results of adding each possible extension
-@author: Axel
-"""
-
 folderStructure=True
 if folderStructure:
     import sys

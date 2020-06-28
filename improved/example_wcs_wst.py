@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 20 06:41:34 2020
-
-This file includes several examples of implementations of the Wason Selection Task as described in the thesis
-All examples make use of the SCP framework.
-@author: Axel
-"""
-
 folderStructure=True
 if folderStructure:
     import sys
