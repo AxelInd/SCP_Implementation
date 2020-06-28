@@ -4,13 +4,19 @@ Created on Sat Jun 13 09:29:03 2020
 
 @author: Axel
 """
-import sys
-sys.path.append("/SCPFramework") 
-import copy
 
-from SCPFramework import epistemicState
-from SCPFramework import StatePointOperations
-from SCPFramework import scpError
+import copy
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    from SCPFramework import epistemicState
+    from SCPFramework import StatePointOperations
+    from SCPFramework import scpError
+else:
+    import epistemicState
+    import StatePointOperations
+    import scpError
 
 class CTM (object):
     def __init__(self):
@@ -43,7 +49,6 @@ class CTM (object):
             valid = True
             for val in validity:
                 if validityTypes[val](self.pCTM[0:i], self.pCTM[i])!=True:
-                    print ("OH NOOOOOO invalid!!!!")
                     valid = False
                 if not valid:
                     raise scpError.invalidCTMError()

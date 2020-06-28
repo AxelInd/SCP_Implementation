@@ -272,12 +272,7 @@ def matrixAsLatex(matrix):
     s+='\end{table}\n'
    
     return s    
-    
-a=[[1,2,3],[4,5,6]]
-topRow=['Made','This']
-firstCold=['Cool', 'This']
-print (matrixAsLatexRC(a, topRow, firstCold))
-    
+
     
     
     

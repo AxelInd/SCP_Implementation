@@ -8,7 +8,13 @@ Created on Mon Apr 27 12:14:20 2020
 import sys
 sys.path.append("/SCPFramework") 
 
-from SCPFramework import basicLogic
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    from SCPFramework import basicLogic
+else:
+    import basicLogic
 
 def kbEvaluator(kb):
     for i in kb:

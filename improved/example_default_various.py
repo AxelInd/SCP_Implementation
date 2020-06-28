@@ -1,21 +1,37 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 22 10:14:11 2020
+Created on Sat Jun 22 09:45:08 2020
 
+This file includes several examples of implementations of Reiter's Default as described in the thesis
+All examples make use of the SCP framework.
+
+The <m_default> cognitive function adds shows the results of adding each possible extension
 @author: Axel
 """
-import sys
-sys.path.append("/SCPFramework") 
 
-from SCPFramework import basicLogic
-from SCPFramework import scpNotationParser as no
-from SCPFramework import epistemicState
-from SCPFramework import CTM
-from SCPFramework import CognitiveOperation as cop
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    
+    from SCPFramework import basicLogic
+    from SCPFramework import scpNotationParser as no
+    from SCPFramework import epistemicState
+    from SCPFramework import CTM
+    from SCPFramework import CognitiveOperation as cop
+else:
+    import basicLogic
+    import scpNotationParser as no
+    import epistemicState
+    import CTM
+    import CognitiveOperation as cop
 
-
+#the operaton on a default theory <W,D> to find extensions
 DEFAULT = cop.m_default()
-
+"""
+A classical example for Reiter's default logic about whether a given bird flies, presented
+propositionally
+"""
 def example_birds():
     W = no.stringListToBasicLogic(['( bird <- T )'])
     
@@ -44,6 +60,10 @@ def example_birds():
 
 
 #SUPPRESSION TASK
+"""
+The suppression task modelled with Reiter's Defult Logic as it appears in the thesis, no
+suppression is observed
+"""
 def example_suppression():
     W = no.stringListToBasicLogic(['( e <- T )'])
     #W = no.stringListToBasicLogic([' bird ', ' penguin '])
@@ -79,7 +99,10 @@ def example_suppression():
     print (ctm_flight)
     print (ctm_flight.evaluate())
 
-
+"""
+The nixon diamond, a classical example of non-monotonicity in the default logic framework. Allows
+2 extensions
+"""
 def example_nixon():
     DEFAULT = cop.m_default()
     W = no.stringListToBasicLogic(['( quaker <- T )', ' ( republican <- T ) '])
@@ -109,6 +132,7 @@ def example_nixon():
     print (ctm_flight.evaluate())
 
 
+#Run these examples to test the <m_default> cognitive operation
 example_birds()
 example_suppression()
 example_nixon()

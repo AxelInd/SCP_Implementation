@@ -4,30 +4,52 @@ Created on Sat Jun 13 11:43:35 2020
 
 @author: Axel
 """
-import sys
-sys.path.append("/SCPFramework") 
 import copy
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    from SCPFramework import basicLogic
+    from SCPFramework import CTM
+    from SCPFramework import StatePointOperations
+else:  
+    import basicLogic
+    import CTM
+    import StatePointOperations
 
-from SCPFramework import basicLogic
-from SCPFramework import CTM
-from SCPFramework import StatePointOperations
-
+"""
+A <CognitiveOperation> is a pipe in the <CTM> pipeline. Cognitive operations are immutable once
+defined, and their usefulness come from their well-founded definitions of specific aspects of human
+cognition. Each cognitive process takes a state point as input and produces a state point as output.
+"""
 class CognitiveOperation(object):
+    """
+    @param name: the unique name of the SCP, shown in output, not used for comparissons
+    """
     def __init__(self,name):
         self.name=name
         self.inputStructuralRequirements=[]
         self.outputStructure=[]
+    """
+    The core funtionality of a <cognitiveOperation> takes an epistemic state as input and produces
+    an epistemic state as output after performing some transformations on the set of structural
+    variables.
+    @param epi: a single <epistemicState> passed as input
+    @return p: an epistemic state point, each base point in p has the same structural variables
+    """
     def evaluateEpistemicState(self, epi):
         pass
-    def precondition(self, epi):
-        print ("Checking preconditions")
     def __str__(self):
         return self.name
     def __repr__(self):
         return str(self)
     
 
-
+    """
+    @param head: head of the clause
+    @param S: the propositional knowledge base to be searched
+    @return [body1 + ... + bodyn | head <- bodyi in clauses]
+    """
     @staticmethod
     def getBodiesWhichShareHead (head, S):
         bodies = []
@@ -40,11 +62,19 @@ class CognitiveOperation(object):
             if  (bijection) and rule.clause2 == head:
                 bodies.append(rule.clause1)
         return bodies
+"""
+Adds interprets conditionals in p[Delta] as licenses for implication.
+Creates abnormalities as definied in <addAB> in the thesis.
+"""
 class m_addAB (CognitiveOperation):
     def __init__(self):
         CognitiveOperation.__init__(self,name="addAB")
         self.inputStructuralRequirements=['Delta']
         self.outputStructure=['S','Delta']
+    """
+    @param epi: a single <epistemicState>
+    @return k the lowest number for which ab_k does not yet exist
+    """
     @staticmethod
     def findLowestK(epi):
         #the lowest number for which ab_1 does not exist
@@ -59,6 +89,10 @@ class m_addAB (CognitiveOperation):
                 lowest_k = k
             k=k+1
         return lowest_k
+    """
+    @param consequence: a consequence of a conditional
+    @return all the preconditions in p[delta] which share a consequence
+    """
     @staticmethod
     def findAllConditionalDependencyPreconditions(consequence, delta):
         bodies = []
@@ -66,6 +100,10 @@ class m_addAB (CognitiveOperation):
             if d.clause1 == consequence:
                 bodies.append(d.clause2)
         return bodies
+    """
+    @param epi: a single <epistemicState>
+    @return p: a single epistemic state with conditionals interpreted as licenses for implication
+    """
     def evaluateEpistemicState(self,epi):
         #set of conditional rules
         delta = epi['Delta']
@@ -104,16 +142,19 @@ class m_addAB (CognitiveOperation):
             resolvedDependencies=resolvedDependencies+allDependencies
         #all conditionals have now been interpreted
         epi['Delta']=[]
-        
         return epi
                 
-                
+"""
+weakly completes S of the epistemic state
+"""
 class m_wc (CognitiveOperation):
     def __init__(self):
         CognitiveOperation.__init__(self,name="wc")
         self.inputStructuralRequirements=['S']
         self.outputStructure=['S']        
-
+    """
+    @return a single disjunction of the contents of every clause in clauses
+    """
     @staticmethod
     def disjunctionOfClauses(clauses):
         disjunction=[]
@@ -124,6 +165,10 @@ class m_wc (CognitiveOperation):
             else:
                 disjunction = basicLogic.operator_bitonic_or(disjunction, clause)
         return disjunction
+    """
+    @param epi: the spistemic state input
+    @return the weak completion of epi
+    """
     def evaluateEpistemicState(self,epi):
         S = epi['S']
         # replace all clauses pointing to the same head with their conjunction
@@ -148,24 +193,51 @@ class m_wc (CognitiveOperation):
         
         #step 1, find all 
         return epi
-        
+"""
+an aggregate <cognitiveOperation> which combines the functionality of the <wc> and <semantic>
+cognitive operations.
+"""
+class m_wcs (CognitiveOperation):
+    def __init__(self):
+        CognitiveOperation.__init__(self,name="wcs")
+        self.inputStructuralRequirements=['S','V']
+        self.outputStructure=['S','V']
+    """
+    @param epi: the <epistemicState> input
+    @return p: the weak completion of epi[S], and the result of the svl stored in p[V]
+    """
+    def evaluateEpistemicState(self,epi):
+        tempCTM=CTM.CTM()
+        tempCTM.si=[epi]
+        tempCTM.appendm(m_wc())
+        tempCTM.appendm(m_semantic())
+        p = tempCTM.evaluate()
+        return p
 
+"""
+Applies the semantic operator
+"""        
 class m_semantic (CognitiveOperation):
     def __init__(self):
         CognitiveOperation.__init__(self,name="semantic")
         self.inputStructuralRequirements=['S','V']
         self.outputStructure=['S','V']
+    """
+    set the value of the atom called atomName in V, to value
+    """
     @staticmethod    
     def changeAssignmentInV(atomName, Value, V):
         for atom in V:
             if atom.getName()==atomName:
                 atom.setValue(Value)
+    """
+    T = [A | there exists a clause A <- Body in epi[S] with I(Body)=T]
+    @return epi with epi[V][v] = T if v in T 
+    """
     @staticmethod
     def setTruth(epi):
-        #I_V(S)
         S = epi['S']
         V = epi['V']
-        
         
         ats = epi.getAtomNamesInStructuralVariables(['S'])
         #Assign TRUTH in possible world
@@ -184,14 +256,14 @@ class m_semantic (CognitiveOperation):
             if left.getName() in ats:
                 evaluation = right.evaluate()
                 if evaluation==True:
-                    m_semantic.changeAssignmentInV(left.getName(), evaluation, V)  
-                    
+                    m_semantic.changeAssignmentInV(left.getName(), evaluation, V)               
         return epi
                     
-    #There exists A<- body and FOR ALL clauses A <- body we find I_V(body)=False   
-    # currently NOT NONMONOTONIC! @TODOfix!
-    # will currently only converge to one least model!
-    # possible solution, run for each possible reordering of the rules
+    """
+    F = [A | there exists a clause A <- Body in epi[S], and for all A <- Body in epi[S]
+    we find I(Body)=F]
+    @return epi with epi[V][v] = F if v in F 
+    """
     @staticmethod
     def setFalse(epi):
         #I_V(S)
@@ -233,7 +305,10 @@ class m_semantic (CognitiveOperation):
                     
         return epi
                     
-                            
+    """
+    @param epi: an input <epistemicState>
+    @return p: epi with epi[V] representing the least model
+    """
     def evaluateEpistemicState(self,epi):
         originalS = copy.deepcopy(epi['S'])
         originalV = copy.deepcopy(epi['V'])
@@ -242,22 +317,32 @@ class m_semantic (CognitiveOperation):
         currentV = originalV
         while currentV != prevV:
             prevV = copy.deepcopy(currentV)
-            
             m_semantic.setTruth(epi)
-        
             m_semantic.setFalse(epi)
             currentV=copy.deepcopy(epi['V'])
         epi['S']=originalS
-        return epi
-    
+        return epi   
 
 from itertools import combinations
+"""
+Add some combination of any length of the set of abducibles
+and add it to the input <epistemicState>
+"""
 class m_addAbducibles(CognitiveOperation):
+    """
+    @param maxLength: the maximum size of the explanation to be added
+    NOTE: large sizes make search EXTREMELY inneficient because multiple <m_addAbducibles>
+    operations can occur in a single <CTM> (the number of resulting state points can be huge)
+    """
     def __init__(self, maxLength=9999):
         CognitiveOperation.__init__(self,name="addExp")
         self.maxLength=maxLength
         self.inputStructuralRequirements=['S','R']
         self.outputStructure=['S','R']
+    """
+    @param epi: the <epistemicState> input
+    @return p: epi, with epi[R][]
+    """
     def evaluateEpistemicState(self,epi):
         nextEpis=[]
         #find only as many abducibles as the max length allows
@@ -267,18 +352,22 @@ class m_addAbducibles(CognitiveOperation):
 
             for j in list(perm): 
                 newEpi = copy.deepcopy(epi)
-                newEpi['R']={'abducibles':list(j)}
-                newEpi['S']=newEpi['S']+list(j)
-                        
+                newEpi['R']['explanation']=list(j)
+                newEpi['S']=newEpi['S']+list(j)   
                 nextEpis.append(newEpi)
         return nextEpis    
-    
+"""
+Delete all variables mentioned in epi[delete] from epi[S], epi[delta], and epi[V]
+"""    
 class m_deleteo(CognitiveOperation):
-    def __init__(self, maxLength=9999):
+    def __init__(self, maxLength=3):
         CognitiveOperation.__init__(self,name="delete")
         self.maxLength=maxLength
         self.inputStructuralRequirements=['S','R']
         self.outputStructure=['S','R']
+    """
+    completely remove a variable varname from the epi
+    """
     def delete(self,varname,epi):
         V = epi['V']
         S = epi['S']
@@ -308,7 +397,10 @@ class m_deleteo(CognitiveOperation):
         epi['V']=V
         epi['S']=newP
         return epi
-        
+    """
+    @param epi: the input <epistemicState>
+    @return p: epi, with variables in ['R']['delete'] deleted
+    """
     def evaluateEpistemicState(self,epi):
         nextEpis=[]
         #find only as many abducibles as the max length allows
@@ -324,25 +416,36 @@ class m_deleteo(CognitiveOperation):
         return nextEpis    
 
 #only used for the NM algorithm
+"""
+Placeholder <cognitiveOperation> only used when comparing <CTM> objects using the scoring NW
+scoring algorithm for SCPs and the extended NW algorith for SCPs. (see thesis chapter: 8)
+"""
 class m_insertionOperation(CognitiveOperation):
     def __init__(self):
         CognitiveOperation.__init__(self,name="INSERT")
 
-#this operation is used in place of an undefined operation for scoring
+"""
+This operation represents an arbitrary operation for scoring with <CTM>. For example, if the
+operation <m_applySystemP> is assumed to exist in an SCP, then we can score that scp
+without explicitly defining <m_applySystemP>.
+"""
 class m_dummyOperation(CognitiveOperation):
     def __init__(self,name="dummy"):
         CognitiveOperation.__init__(self,name=name)
-
-  
-
-
+"""
+A very simplified version of the deductive closure of a program. Any element in p[S]
+is in the deductive close of epi[S], but only some elements of the deductive close are in p[S]
+"""
 class m_th_simplified(CognitiveOperation):
     def __init__(self,name="th", target='S'):
         CognitiveOperation.__init__(self,name=name)
         self.target=target
         self.inputStructuralRequirements=[self.target,'V']
         self.outputStructure=[self.target,'V']
-        
+    
+    """
+    @return the value of every variable called name in li set to val
+    """
     @staticmethod
     def addVarAssignmentToV(li, name, val):
         li=copy.deepcopy(li)
@@ -350,7 +453,10 @@ class m_th_simplified(CognitiveOperation):
             if variable.getName()==name:
                 variable.setValue(val)
         return li
-        
+    """
+    @param epi: the input <epistemicState>
+    @return p: the simplified deductive closure of epi[S] stored in p[S]
+    """
     def evaluateEpistemicState(self,epi):
         kb = epi[self.target]
         v=epi['V']
@@ -374,10 +480,7 @@ class m_th_simplified(CognitiveOperation):
                 else:
                     print ("unknown bitonic")
             else:
-                print ("unknown operation")
-                    
-                    
-                    
+                print ("unknown operation")       
         epi['V']=v
         epi[self.target]=kb
         #remove all v assignments from this epi, th is not an evaluation function
@@ -386,24 +489,41 @@ class m_th_simplified(CognitiveOperation):
                 rule.deepSet(v.getName(), None)
         return epi
 
-
+"""
+Determine the results of applying each extension possible of the default theory (epi[D],epi[W])
+Makes use of <m_th>, meaning that it cannot produce the true deductive closure of epi[W], or
+in the In sets, but it is good enough for our purposes.
+"""
 from itertools import permutations
+"""
+@param maxLength: the maximum length of the generated default processes
+"""
 class m_default(CognitiveOperation):
     def __init__(self,name="th", maxLength=3):
         CognitiveOperation.__init__(self,name=name)
         self.inputStructuralRequirements=['W','D','V']
         self.outputStructure=['W','D','V']
         self.maxLength=maxLength
+    """
+    Do not consider extensions of length 0
+    """
     @staticmethod
     def isValidDefaultSubProcess (dp, W):
         if len (dp)==0:
             return True
+    """
+    add the conlusion of the default process d to epi[W]
+    """
     @staticmethod
     def addConclusionToEpi (d, epi):
         epi['W'].append(d.clause3)
         return epi
     
     #assumed to hold
+    """
+    Determine in the inset and outset of epi[S] when using default process dp
+    @return inset, outset
+    """
     @staticmethod
     def INOUT (dp, epi):
         IN_epi=copy.deepcopy(epi)
@@ -413,9 +533,6 @@ class m_default(CognitiveOperation):
         OUT = []
         for proc in dp:
             OUT+=basicLogic.negateRuleList(proc.clause2)
-        #print ("OUT:: ", OUT)
-        
-        
         #GET IN SET
         for proc in dp:
             #basicLogic.setkbfromv(IN_epi['W'], IN_epi['V'])
@@ -427,7 +544,10 @@ class m_default(CognitiveOperation):
                 #@TODOthrowexception
                 return False
         return IN, OUT
-        
+    """
+    @return True if dp is valid default process on epi. Shares redundant code with INOUT(), but
+    increases readability of the code.
+    """
     @staticmethod
     def isValidDefaultProcess (dp, epi):
         #GET OUT SET
@@ -447,9 +567,10 @@ class m_default(CognitiveOperation):
             if not proc.isApplicableToW(IN):
                 return False
         return True
-            
-        
-        return True
+    
+    """
+    determine the simplified deductive closure of epi[W]
+    """
     @staticmethod
     def getTh (epi):
         tempCTM=CTM.CTM()
@@ -461,6 +582,7 @@ class m_default(CognitiveOperation):
         return epi
     #very very inefficient, but suitable for a proof of concept
     def evaluateEpistemicState(self,epi):
+        #@TODO incomplete and being rewritten
         D = epi['D']
         possibleProcesses=[]
         for i in range(0, min(len(D)+1,self.maxLength)):  
@@ -474,12 +596,8 @@ class m_default(CognitiveOperation):
                 validProcesses.append(dp)
             else:
                 print(dp, " is invalid")
-        print (">>>>>>VALID PROCS<<<<<<<<<<<<<<<<<<")
         for dp in validProcesses:
-            print ("DP is ", dp)
             IN, OUT = m_default.INOUT(dp,epi)
-            print ("In is ", IN)
-            print ("Out is ", OUT)
         successfulProcesses=[]
         for dp in validProcesses:
             #intersection in, out should be the empty set
@@ -487,16 +605,11 @@ class m_default(CognitiveOperation):
             failed=False
             for IN_rule in IN:
                 if IN_rule in OUT:
-                    print ("d = INVALID")
                     failed=True
             if not failed:
                 successfulProcesses.append(dp)
-        print ("+++++++++SUCCESSFUL PROCS+++++++++++++++")
         for dp in successfulProcesses:
-            print ("DP is ", dp)
             IN, OUT = m_default.INOUT(dp,epi)
-            print ("In is ", IN)
-            print ("Out is ", OUT)
         closedSuccessfulProcesses= []
         for dp in successfulProcesses:
             dpHolds=True
@@ -508,7 +621,7 @@ class m_default(CognitiveOperation):
             if dpHolds:
                 closedSuccessfulProcesses.append(dp)
             dpHolds=True
-        print ("+++++++++SUCCESSFUL CLOSED PROCS+++++++++++++++")
+        return epi
         for dp in closedSuccessfulProcesses:
             print ("DP is ", dp)
             IN, OUT = m_default.INOUT(dp,epi)

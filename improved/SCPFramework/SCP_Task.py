@@ -5,21 +5,31 @@ Created on Sat Jun 13 09:09:55 2020
 @author: Axel
 """
 
-import sys
-sys.path.append("/SCPFramework") 
 import copy
-#an implementation of 3-valued logic
-#used to deepcopy complex objects
-from SCPFramework import scpError
-from SCPFramework import StatePointOperations
-from SCPFramework import CTM
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    from SCPFramework import scpError
+    from SCPFramework import StatePointOperations
+    from SCPFramework import CTM
+else:  
+    import scpError
+    import StatePointOperations
+    import CTM
 
-#used to create complex epistemic actions in the seuqence
-#used to throw exceptions for improper use
 
-
+"""
+The <SCP_Task> defines the problem space for the cognitive task to be modelled
+It consists of four (4) parts:
+    1) s_i: the initial state point (containing epistemic states)
+    2) M: the set of cognitive operations which are considered allowable in this task domain
+    3) f: the external evaluation function, is a pointer to a user-defined function
+    4) gamma: the goal output of <f> which the SCP will attempt to replicate
+From the SCP Task, SCPs that model the task are generated
+"""
 class SCP_Task (object):
-    def __init__(self,si=[],M=[],f=[],gamma=[]):
+    def __init__(self,si=[],M=[],f=None,gamma=[]):
         self.si=si
         self.M=M
         self.f=f
@@ -54,6 +64,10 @@ class SCP_Task (object):
         return self.gamma
     def evaluate(self):
         return self.f(self.M)
+    """
+    Breadth-first search through SCP Space for SCPs m=(<ctm>,<f>) for which f(ctm)|=gamma
+    used to generate SCPs.
+    """
     def deNoveSearch(self, depth = 3, searchType="satisfying"):
         searchTypes={"exhaustive":self.s_exhaustive, "satisfying":self.s_satisfying}
         firstCTM = CTM.CTM()
@@ -61,8 +75,6 @@ class SCP_Task (object):
         
         ctms = firstCTM
         results = self.dns(ctms, depth)
-        
-        
         results = searchTypes[searchType](results)
         
         return results
@@ -79,15 +91,21 @@ class SCP_Task (object):
         for ctm in new_ctms:
             toKeep= toKeep + self.dns(ctm,depth-1)
         return toKeep
+    """
+    Every SCP in SCP space is considered a valid SCP
+    """
     def s_exhaustive(self, results):
         return StatePointOperations.CTMtoSCP(results,self.f)   
-        
+    """
+    Only SCPs in the SCP space which meet the goal gamma are considered valid
+    """
     def s_satisfying(self, results):
         satisfyingResults=[]
         for result in results:
             #print ("result is ",result)
             #print (self.f(result))
-            if self.gamma in self.f(result):
+            predModelsGamma=StatePointOperations.predictionsModelsGamma_lenient(self.f(result),self.gamma)
+            if predModelsGamma:
                 satisfyingResults.append(result)
         return StatePointOperations.CTMtoSCP(satisfyingResults,self.f)    
 

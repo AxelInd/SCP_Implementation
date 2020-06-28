@@ -4,9 +4,14 @@ Created on Sat Jan 18 11:07:55 2020
 
 @author: Axel
 """
-import sys
-sys.path.append("/SCPFramework") 
-from SCPFramework.truthTables import truthTable
+folderStructure=True
+if folderStructure:
+    import sys
+    sys.path.append("/SCPFramework") 
+    from SCPFramework.truthTables import truthTable
+else:
+    from truthTables import truthTable
+
 """
 ATOMS ARE THE BASIC UNIT OF LOGIC.
 Every atom consists of a name and truth value.

@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jun 14 09:58:01 2020
 
-@author: Axel
-"""
 
 import copy
 #take a state point and return every base point in the state point
@@ -91,14 +86,10 @@ def predictionsModelsGamma_lenient(predictions,gamma):
 
 def predictionsModelsGamma_strict(predictions,gamma):
     for i in gamma:
-        predHolds=True
         #some prediction is in gamma for that attribute
         for prediction in predictions[i]:
-            if prediction in gamma[i]:
-                predHolds=False
-        #some prediction required by gamma was not met
-        if not predHolds:
-            return False
+            if prediction not in gamma[i]:
+                return False
     return True
 
 
